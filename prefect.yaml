@@ -1,0 +1,20 @@
+name: neurodrift
+prefect-version: 2.18.0
+
+build: null
+push: null
+pull: null
+
+deployments:
+  - name: neurodrift-train
+    version: 0.1.0
+    tags: ["healthcare", "bci", "training"]
+    description: "Full NeuroDrift training flow on real MOABB BNCI2014_001 data."
+    entrypoint: src/neurodrift/flows/training_flow.py:neurodrift_training_flow
+    parameters: {}
+    work_pool:
+      name: default
+    schedules:
+      - cron: "0 4 * * 0"
+        timezone: "UTC"
+        active: false

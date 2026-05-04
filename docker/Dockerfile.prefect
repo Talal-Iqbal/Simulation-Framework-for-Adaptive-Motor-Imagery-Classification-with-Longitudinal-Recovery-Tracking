@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1.6
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+RUN pip install --upgrade pip wheel && pip install --prefix=/install -r requirements.txt
+
+
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app:/app/src \
+    NEURODRIFT_REGISTRY_DIR=/app/artifacts/registry \
+    NEURODRIFT_DATA_DIR=/app/data \
+    PREFECT_HOME=/app/.prefect
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgomp1 curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 neurodrift
+
+COPY --from=builder /install /usr/local
+
+COPY src/ ./src/
+COPY feature_extractor.py corruption_engine.py degradation_model.py ./
+COPY scripts/ ./scripts/
+COPY prefect.yaml pyproject.toml README.md ./
+
+RUN mkdir -p /app/artifacts/registry /app/data /app/.prefect \
+    && chown -R neurodrift:neurodrift /app
+
+USER neurodrift
+
+CMD ["python", "scripts/train_all.py"]
