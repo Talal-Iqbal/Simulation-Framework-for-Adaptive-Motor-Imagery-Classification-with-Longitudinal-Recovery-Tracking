@@ -38,12 +38,13 @@ def _bandpass(x: np.ndarray, sfreq: float, fmin: float, fmax: float, order: int 
 
 
 def _rms(x: np.ndarray) -> float:
-    return float(np.sqrt(np.mean(x ** 2) + 1e-24))
+    return float(np.sqrt(np.mean(x**2) + 1e-24))
 
 
 # ---------------------------------------------------------------------------
 # Artifact family
 # ---------------------------------------------------------------------------
+
 
 def inject_emg_burst(epoch, sfreq, severity, rng, peripheral_idx=None):
     """In-band EMG: broadband noise bandpassed into 20-32 Hz, windowed,
@@ -66,7 +67,7 @@ def inject_emg_burst(epoch, sfreq, severity, rng, peripheral_idx=None):
             ch = int(rng.integers(0, n_ch))
         else:
             ch = int(rng.choice(peripheral_idx))
-        out[ch, start:start + dur] += burst
+        out[ch, start : start + dur] += burst
     return out
 
 
@@ -87,7 +88,7 @@ def inject_eog_residual(epoch, sfreq, severity, rng, frontal_idx=None):
     out = epoch.copy()
     for ch in range(n_ch):
         weight = gradient[ch] if ch in frontal_idx else 0.2 * gradient[ch]
-        out[ch, start:start + dur] += weight * blink
+        out[ch, start : start + dur] += weight * blink
     return out
 
 
@@ -104,13 +105,14 @@ def inject_electrode_ring(epoch, sfreq, severity, rng):
     ring = np.sin(2 * np.pi * freq * t) * np.exp(-t / tau)
     amp = (1.0 + 4.0 * severity) * _rms(epoch)
     out = epoch.copy()
-    out[ch, start:start + dur] += ring * amp
+    out[ch, start : start + dur] += ring * amp
     return out
 
 
 # ---------------------------------------------------------------------------
 # Disengagement family
 # ---------------------------------------------------------------------------
+
 
 def attenuate_erd(epoch, sfreq, severity, rng, motor_ch=(7, 11)):
     """Scale mu/beta band power on motor channels toward zero so class-specific
@@ -160,13 +162,14 @@ def substitute_rest_like(epoch, sfreq, severity, rng):
     for ch in range(n_ch):
         noise[ch] = noise[ch] * _rms(epoch[ch]) / _rms(noise[ch])
     out = epoch.copy()
-    out[:, start:start + n_replace] = noise
+    out[:, start : start + n_replace] = noise
     return out
 
 
 # ---------------------------------------------------------------------------
 # Implausibility family
 # ---------------------------------------------------------------------------
+
 
 def channel_shuffle(epoch, sfreq, severity, rng):
     """Permute a subset of channels so CSP's learned spatial structure breaks."""
@@ -183,21 +186,22 @@ def swap_hemispheres(epoch, sfreq, severity, rng, left_idx=None, right_idx=None)
     """Mix mirrored left/right motor channels (symmetric pairs for the 22-ch
     BNCI2014_001 montage). severity controls how much each pair is swapped."""
     if left_idx is None or right_idx is None:
-        left_idx = [1, 6, 7, 8, 13, 14, 18]     # FC3, C5, C3, C1, CP3, CP1, P1
-        right_idx = [5, 12, 11, 10, 17, 16, 20] # FC4, C6, C4, C2, CP4, CP2, P2
+        left_idx = [1, 6, 7, 8, 13, 14, 18]  # FC3, C5, C3, C1, CP3, CP1, P1
+        right_idx = [5, 12, 11, 10, 17, 16, 20]  # FC4, C6, C4, C2, CP4, CP2, P2
     out = epoch.copy()
     alpha = 0.5 + 0.5 * severity
-    for l, r in zip(left_idx, right_idx):
-        if l < out.shape[0] and r < out.shape[0]:
-            new_l = (1 - alpha) * out[l] + alpha * out[r]
-            new_r = (1 - alpha) * out[r] + alpha * out[l]
-            out[l], out[r] = new_l, new_r
+    for _left, _right in zip(left_idx, right_idx):
+        if _left < out.shape[0] and _right < out.shape[0]:
+            new_l = (1 - alpha) * out[_left] + alpha * out[_right]
+            new_r = (1 - alpha) * out[_right] + alpha * out[_left]
+            out[_left], out[_right] = new_l, new_r
     return out
 
 
 # ---------------------------------------------------------------------------
 # SNR degradation family
 # ---------------------------------------------------------------------------
+
 
 def add_inband_pink(epoch, sfreq, severity, rng):
     """1/f noise shaped in-band, scaled to a target per-channel SNR."""
@@ -239,6 +243,7 @@ def channel_dropout(epoch, sfreq, severity, rng):
 # model has to make hard calls. Oversampling this zone is what teaches a
 # sharp decision boundary.
 # ---------------------------------------------------------------------------
+
 
 def weaken_erd_partial(epoch, sfreq, severity, rng, motor_ch=(7, 11)):
     """Scale mu/beta power on motor channels by a factor in [0.4, 0.8] —
@@ -292,6 +297,7 @@ def low_snr_borderline(epoch, sfreq, severity, rng):
 # Engine wrapper
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CorruptionSpec:
     name: str
@@ -311,13 +317,15 @@ class CorruptionEngine:
     # Index where the rest baseline ends and the imagery window begins.
     # Default 500 = 2 s @ 250 Hz, matching the notebook's BASELINE_SAMPLES.
     baseline_samples: int = 500
-    family_weights: dict[str, float] = field(default_factory=lambda: {
-        "artifact":       0.20,
-        "disengagement":  0.45,
-        "implausibility": 0.10,
-        "snr":            0.10,
-        "borderline":     0.15,
-    })
+    family_weights: dict[str, float] = field(
+        default_factory=lambda: {
+            "artifact": 0.20,
+            "disengagement": 0.45,
+            "implausibility": 0.10,
+            "snr": 0.10,
+            "borderline": 0.15,
+        }
+    )
     # Skewed toward mild: the decision boundary lives in the near-threshold
     # zone, so oversample it.
     severity_mix: tuple[float, float, float] = (0.50, 0.35, 0.15)  # mild / moderate / severe
@@ -327,25 +335,25 @@ class CorruptionEngine:
         self.rng = np.random.default_rng(self.seed)
         self.primitives: list[CorruptionSpec] = [
             # --- artifacts (can happen anywhere in a recording) ---
-            CorruptionSpec("emg_burst",              inject_emg_burst,        "artifact",      "full"),
-            CorruptionSpec("eog_residual",           inject_eog_residual,     "artifact",      "full"),
-            CorruptionSpec("electrode_ring",         inject_electrode_ring,   "artifact",      "full"),
+            CorruptionSpec("emg_burst", inject_emg_burst, "artifact", "full"),
+            CorruptionSpec("eog_residual", inject_eog_residual, "artifact", "full"),
+            CorruptionSpec("electrode_ring", inject_electrode_ring, "artifact", "full"),
             # --- disengagement (the subject failed to engage during MI;
             #     baseline rest stays clean so ERD reference is informative) ---
-            CorruptionSpec("attenuate_erd",          attenuate_erd,           "disengagement", "task"),
-            CorruptionSpec("destroy_lateralization", destroy_lateralization,  "disengagement", "task"),
-            CorruptionSpec("boost_alpha",            boost_alpha_uniform,     "disengagement", "full"),
-            CorruptionSpec("substitute_rest",        substitute_rest_like,    "disengagement", "task"),
+            CorruptionSpec("attenuate_erd", attenuate_erd, "disengagement", "task"),
+            CorruptionSpec("destroy_lateralization", destroy_lateralization, "disengagement", "task"),
+            CorruptionSpec("boost_alpha", boost_alpha_uniform, "disengagement", "full"),
+            CorruptionSpec("substitute_rest", substitute_rest_like, "disengagement", "task"),
             # --- implausibility (spatial layout is wrong only during MI) ---
-            CorruptionSpec("channel_shuffle",        channel_shuffle,         "implausibility","task"),
-            CorruptionSpec("swap_hemispheres",       swap_hemispheres,        "implausibility","task"),
+            CorruptionSpec("channel_shuffle", channel_shuffle, "implausibility", "task"),
+            CorruptionSpec("swap_hemispheres", swap_hemispheres, "implausibility", "task"),
             # --- broadband / electrode (persists across the whole epoch) ---
-            CorruptionSpec("inband_pink",            add_inband_pink,         "snr",           "full"),
-            CorruptionSpec("channel_dropout",        channel_dropout,         "snr",           "full"),
+            CorruptionSpec("inband_pink", add_inband_pink, "snr", "full"),
+            CorruptionSpec("channel_dropout", channel_dropout, "snr", "full"),
             # --- borderline ERD/lateralization weakening ---
-            CorruptionSpec("weaken_erd_partial",     weaken_erd_partial,      "borderline",    "task"),
-            CorruptionSpec("partial_lateralization", partial_lateralization,  "borderline",    "task"),
-            CorruptionSpec("low_snr_borderline",     low_snr_borderline,      "borderline",    "full"),
+            CorruptionSpec("weaken_erd_partial", weaken_erd_partial, "borderline", "task"),
+            CorruptionSpec("partial_lateralization", partial_lateralization, "borderline", "task"),
+            CorruptionSpec("low_snr_borderline", low_snr_borderline, "borderline", "full"),
         ]
         self._by_family: dict[str, list[CorruptionSpec]] = {}
         for p in self.primitives:
@@ -371,15 +379,19 @@ class CorruptionEngine:
             # Apply the primitive to the imagery slice only; reassemble the
             # full epoch so the rest baseline is preserved unchanged.
             full = epoch.copy()
-            task_in = full[..., self.baseline_samples:].copy()
+            task_in = full[..., self.baseline_samples :].copy()
             task_out = prim.fn(task_in, self.sfreq, sev, self.rng)
-            full[..., self.baseline_samples:] = task_out
+            full[..., self.baseline_samples :] = task_out
             corrupted = full
         else:
             corrupted = prim.fn(epoch.copy(), self.sfreq, sev, self.rng)
 
-        return corrupted, {"corruption": prim.name, "family": prim.family,
-                           "severity": sev, "domain": prim.domain}
+        return corrupted, {
+            "corruption": prim.name,
+            "family": prim.family,
+            "severity": sev,
+            "domain": prim.domain,
+        }
 
     def generate_dataset(self, clean_epochs: np.ndarray, n_per_epoch: int = 5):
         X_bad = np.empty((len(clean_epochs) * n_per_epoch, *clean_epochs.shape[1:]), dtype=clean_epochs.dtype)

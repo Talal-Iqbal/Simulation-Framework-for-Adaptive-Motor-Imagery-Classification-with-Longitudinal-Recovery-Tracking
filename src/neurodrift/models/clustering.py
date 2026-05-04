@@ -46,6 +46,4 @@ def cluster_sessions(
         "silhouette": sil,
         "inertia": float(km.inertia_),
     }
-    return ClusteringArtifacts(
-        scaler=scaler, kmeans=km, feature_names=feature_names, metrics=metrics
-    )
+    return ClusteringArtifacts(scaler=scaler, kmeans=km, feature_names=feature_names, metrics=metrics)

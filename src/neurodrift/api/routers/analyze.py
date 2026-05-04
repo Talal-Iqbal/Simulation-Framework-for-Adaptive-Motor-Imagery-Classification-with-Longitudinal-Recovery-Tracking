@@ -27,9 +27,7 @@ def analyze_session(
     if missing:
         raise HTTPException(status_code=400, detail=f"Missing session features: {missing}")
 
-    vec = np.array(
-        [[payload.features[k] for k in SESSION_FEATURE_NAMES]], dtype=np.float64
-    )
+    vec = np.array([[payload.features[k] for k in SESSION_FEATURE_NAMES]], dtype=np.float64)
 
     pred_r = float(bundle.regressor.pipeline.predict(vec)[0])
 

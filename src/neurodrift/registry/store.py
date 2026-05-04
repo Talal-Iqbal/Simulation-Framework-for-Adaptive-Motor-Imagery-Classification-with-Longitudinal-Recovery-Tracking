@@ -105,9 +105,7 @@ class ModelRegistry:
         version_dir = Path(info["path"])
         manifest_path = version_dir / "manifest.json"
         manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
-        return RegistryEntry(
-            name=name, version=info["version"], path=version_dir, manifest=manifest
-        )
+        return RegistryEntry(name=name, version=info["version"], path=version_dir, manifest=manifest)
 
     def list_versions(self, name: str) -> list[str]:
         d = self._model_dir(name)

@@ -13,9 +13,7 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health", response_model=HealthResponse)
 def health(bundle: ModelBundle = Depends(get_model_bundle)) -> HealthResponse:
-    cal_versions = {
-        f"calibration_subject_{sid}": ver for sid, ver in bundle.calibration_version.items()
-    }
+    cal_versions = {f"calibration_subject_{sid}": ver for sid, ver in bundle.calibration_version.items()}
     return HealthResponse(
         status="ok",
         version=__version__,

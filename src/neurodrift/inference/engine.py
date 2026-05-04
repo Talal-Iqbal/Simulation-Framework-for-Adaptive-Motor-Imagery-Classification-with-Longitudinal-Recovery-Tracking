@@ -48,15 +48,11 @@ def rejection_reasons(
     idx = {n: i for i, n in enumerate(feat_names)}
     reasons: list[str] = []
     if feat_vec[idx["peak_to_peak_max"]] > p2p_thr:
-        reasons.append(
-            f"artifact_p2p({feat_vec[idx['peak_to_peak_max']] * 1e6:.0f}uV)"
-        )
+        reasons.append(f"artifact_p2p({feat_vec[idx['peak_to_peak_max']] * 1e6:.0f}uV)")
     if feat_vec[idx["kurtosis_max"]] > kurt_thr:
         reasons.append(f"artifact_kurt({feat_vec[idx['kurtosis_max']]:.1f})")
     if abs(feat_vec[idx["erd_lat_mu"]]) < erd_lat_thr:
-        reasons.append(
-            f"weak_lateralization({abs(feat_vec[idx['erd_lat_mu']]):.3f})"
-        )
+        reasons.append(f"weak_lateralization({abs(feat_vec[idx['erd_lat_mu']]):.3f})")
     if feat_vec[idx["baseline_p2p_max"]] > base_p2p_thr:
         reasons.append("noisy_baseline")
     return reasons
@@ -83,7 +79,7 @@ def pseudo_online_engine(
     t_sim = 0.0
 
     for i in range(len(X)):
-        epoch = X[i:i + 1]
+        epoch = X[i : i + 1]
 
         x_csp_i = csp.transform(task_view(epoch))
         pred_arr = lda_model.predict(x_csp_i)

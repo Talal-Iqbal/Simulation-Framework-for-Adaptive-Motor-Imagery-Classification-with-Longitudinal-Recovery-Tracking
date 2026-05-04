@@ -22,10 +22,28 @@ FEEDBACK_DELAY_S: float = 0.2
 CLASSIFICATION_DELAY_S: float = 0.05
 
 CH_NAMES: list[str] = [
-    "Fz", "FC3", "FC1", "FCz", "FC2", "FC4",
-    "C5", "C3", "C1", "Cz", "C2", "C4", "C6",
-    "CP3", "CP1", "CPz", "CP2", "CP4",
-    "P1", "Pz", "P2", "POz",
+    "Fz",
+    "FC3",
+    "FC1",
+    "FCz",
+    "FC2",
+    "FC4",
+    "C5",
+    "C3",
+    "C1",
+    "Cz",
+    "C2",
+    "C4",
+    "C6",
+    "CP3",
+    "CP1",
+    "CPz",
+    "CP2",
+    "CP4",
+    "P1",
+    "Pz",
+    "P2",
+    "POz",
 ]
 
 C3_IDX: int = CH_NAMES.index("C3")
@@ -57,9 +75,7 @@ class Settings:
     registry_dir: Path = field(
         default_factory=lambda: _env_path("NEURODRIFT_REGISTRY_DIR", ROOT_DIR / "artifacts" / "registry")
     )
-    data_dir: Path = field(
-        default_factory=lambda: _env_path("NEURODRIFT_DATA_DIR", ROOT_DIR / "data")
-    )
+    data_dir: Path = field(default_factory=lambda: _env_path("NEURODRIFT_DATA_DIR", ROOT_DIR / "data"))
     log_level: str = field(default_factory=lambda: os.environ.get("NEURODRIFT_LOG_LEVEL", "INFO"))
 
     api_host: str = field(default_factory=lambda: os.environ.get("NEURODRIFT_API_HOST", "0.0.0.0"))
@@ -69,9 +85,7 @@ class Settings:
         default_factory=lambda: int(os.environ.get("NEURODRIFT_HELD_OUT_SUBJECT", "2"))
     )
     global_train_subjects: list[int] = field(
-        default_factory=lambda: _env_int_list(
-            "NEURODRIFT_GLOBAL_TRAIN_SUBJECTS", [1, 3, 4, 5, 6, 7, 8, 9]
-        )
+        default_factory=lambda: _env_int_list("NEURODRIFT_GLOBAL_TRAIN_SUBJECTS", [1, 3, 4, 5, 6, 7, 8, 9])
     )
 
     smtp_host: str = field(default_factory=lambda: os.environ.get("SMTP_HOST", ""))

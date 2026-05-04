@@ -43,9 +43,11 @@ from .notify import send_email_notification
 try:
     from prefect import flow, task
 except ImportError:
+
     def task(*args, **kwargs):
         def deco(fn):
             return fn
+
         if args and callable(args[0]):
             return args[0]
         return deco
@@ -53,6 +55,7 @@ except ImportError:
     def flow(*args, **kwargs):
         def deco(fn):
             return fn
+
         if args and callable(args[0]):
             return args[0]
         return deco
@@ -103,7 +106,9 @@ def build_dataset_task(
 
 
 @task
-def deepchecks_data_integrity(F_all: np.ndarray, Y_all: np.ndarray, feature_names: list[str]) -> dict[str, Any]:
+def deepchecks_data_integrity(
+    F_all: np.ndarray, Y_all: np.ndarray, feature_names: list[str]
+) -> dict[str, Any]:
     from ..testing.data_validation import run_data_integrity_suite
 
     return run_data_integrity_suite(F_all, Y_all, feature_names)
@@ -277,9 +282,7 @@ def neurodrift_training_flow(
         def fe_factory(csp, lda):
             return FeatureExtractor(csp=csp, lda=lda, ch_names=list(CH_NAMES))
 
-        layer7 = layer7_longitudinal(
-            held_out["X_eval"], held_out["y_eval"], cal_artifacts, fe_factory
-        )
+        layer7 = layer7_longitudinal(held_out["X_eval"], held_out["y_eval"], cal_artifacts, fe_factory)
 
         train_hash = hash_array(global_pool["X"])
         saved = save_all_artifacts(accept_artifacts, cal_artifacts, layer7, train_hash)

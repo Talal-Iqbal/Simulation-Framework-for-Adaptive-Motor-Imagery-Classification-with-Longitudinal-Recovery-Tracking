@@ -26,9 +26,7 @@ def test_engine_runs(synthetic_epochs, rqe, trained_acceptance, calibrated_subje
         assert isinstance(r.accepted, (bool, np.bool_))
 
 
-def test_engine_offline_online_equivalence(
-    synthetic_epochs, rqe, trained_acceptance, calibrated_subject
-):
+def test_engine_offline_online_equivalence(synthetic_epochs, rqe, trained_acceptance, calibrated_subject):
     """Notebook invariant: per-trial loop predictions must match a batch pass."""
     X, y = synthetic_epochs
 

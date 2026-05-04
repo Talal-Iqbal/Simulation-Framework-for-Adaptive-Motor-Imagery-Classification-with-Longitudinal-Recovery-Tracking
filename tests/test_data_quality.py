@@ -9,9 +9,7 @@ import pytest
 def test_data_integrity_passes_clean(acceptance_dataset, rqe):
     from neurodrift.testing.data_validation import run_data_integrity_suite
 
-    summary = run_data_integrity_suite(
-        acceptance_dataset.F_all, acceptance_dataset.Y_all, rqe.feature_names
-    )
+    summary = run_data_integrity_suite(acceptance_dataset.F_all, acceptance_dataset.Y_all, rqe.feature_names)
     assert summary["passed"] is True
     assert summary["nulls"] == 0
     assert summary["inf_count"] == 0

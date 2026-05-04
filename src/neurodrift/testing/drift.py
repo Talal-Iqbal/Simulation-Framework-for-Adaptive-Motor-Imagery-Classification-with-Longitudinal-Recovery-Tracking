@@ -60,9 +60,7 @@ def detect_drift(
     KS:  p < 0.01 = distributions differ.
     """
     if reference.shape[1] != current.shape[1]:
-        raise ValueError(
-            f"Feature dimension mismatch: ref={reference.shape[1]} vs cur={current.shape[1]}"
-        )
+        raise ValueError(f"Feature dimension mismatch: ref={reference.shape[1]} vs cur={current.shape[1]}")
 
     per_feature: dict[str, dict[str, float]] = {}
     drifted: list[str] = []

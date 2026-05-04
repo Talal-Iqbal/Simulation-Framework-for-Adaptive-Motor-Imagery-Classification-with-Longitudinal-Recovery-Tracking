@@ -46,9 +46,7 @@ def _basic_integrity_checks(F: np.ndarray, Y: np.ndarray, feature_names: list[st
     }
 
 
-def run_data_integrity_suite(
-    F: np.ndarray, Y: np.ndarray, feature_names: list[str]
-) -> dict[str, Any]:
+def run_data_integrity_suite(F: np.ndarray, Y: np.ndarray, feature_names: list[str]) -> dict[str, Any]:
     """Run DeepChecks data-integrity suite (with graceful fallback)."""
     basic = _basic_integrity_checks(F, Y, feature_names)
 

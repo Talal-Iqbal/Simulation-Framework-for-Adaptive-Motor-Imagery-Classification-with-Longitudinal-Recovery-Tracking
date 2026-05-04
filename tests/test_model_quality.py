@@ -22,9 +22,7 @@ def test_model_evaluation_runs(acceptance_dataset, trained_acceptance, rqe):
     assert "accuracy" in summary
 
 
-def test_model_evaluation_fails_high_threshold(
-    acceptance_dataset, trained_acceptance, rqe
-):
+def test_model_evaluation_fails_high_threshold(acceptance_dataset, trained_acceptance, rqe):
     from neurodrift.testing.model_validation import run_model_evaluation_suite
 
     with pytest.raises(ValueError):

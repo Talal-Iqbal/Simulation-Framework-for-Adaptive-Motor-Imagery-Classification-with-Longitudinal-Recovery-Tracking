@@ -31,9 +31,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    global_subjects = (
-        [int(x) for x in args.global_subjects.split(",")] if args.global_subjects else None
-    )
+    global_subjects = [int(x) for x in args.global_subjects.split(",")] if args.global_subjects else None
 
     result = neurodrift_training_flow(
         global_subjects=global_subjects,

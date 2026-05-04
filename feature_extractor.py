@@ -62,20 +62,25 @@ class FeatureExtractor:
     ch_names: Sequence[str]
     sfreq: float = 250.0
     baseline_samples: int = 500
-    feature_names: list[str] = field(default_factory=lambda: [
-        "lda_margin",
-        "lda_proba_max",
-        "csp_logvar_0", "csp_logvar_1", "csp_logvar_2", "csp_logvar_3",
-        "mahal_to_predicted",
-        "peak_to_peak_max",
-        "kurtosis_max",
-        "erd_mu_c3",
-        "erd_mu_c4",
-        "erd_lat_mu",
-        "mu_ratio_motor",
-        "motor_relative_power",
-        "baseline_p2p_max",
-    ])
+    feature_names: list[str] = field(
+        default_factory=lambda: [
+            "lda_margin",
+            "lda_proba_max",
+            "csp_logvar_0",
+            "csp_logvar_1",
+            "csp_logvar_2",
+            "csp_logvar_3",
+            "mahal_to_predicted",
+            "peak_to_peak_max",
+            "kurtosis_max",
+            "erd_mu_c3",
+            "erd_mu_c4",
+            "erd_lat_mu",
+            "mu_ratio_motor",
+            "motor_relative_power",
+            "baseline_p2p_max",
+        ]
+    )
 
     def __post_init__(self):
         self.c3 = self.ch_names.index("C3")
@@ -87,7 +92,7 @@ class FeatureExtractor:
 
     def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> FeatureExtractor:
         """X_train is the FULL (baseline+task) epoch tensor."""
-        X_task = X_train[..., self.baseline_samples:]
+        X_task = X_train[..., self.baseline_samples :]
         X_csp = self.csp.transform(X_task)
         classes = np.unique(y_train)
         self._centroids = {c: X_csp[y_train == c].mean(axis=0) for c in classes}
@@ -100,8 +105,8 @@ class FeatureExtractor:
         if self._centroids is None:
             raise RuntimeError("FeatureExtractor.fit(...) must be called first.")
 
-        baseline = epoch[..., :self.baseline_samples]
-        task = epoch[..., self.baseline_samples:]
+        baseline = epoch[..., : self.baseline_samples]
+        task = epoch[..., self.baseline_samples :]
         eps = 1e-12
 
         # ---- classifier confidence (CSP/LDA see ONLY the task slice) ----
@@ -145,20 +150,26 @@ class FeatureExtractor:
         global_var = np.mean(np.var(task, axis=-1))
         motor_rel = float(motor_var / (global_var + eps))
 
-        return np.array([
-            abs(dec),
-            float(np.max(proba)),
-            csp_feat[0], csp_feat[1], csp_feat[2], csp_feat[3],
-            mahal,
-            p2p_max_task,
-            kurt_max_task,
-            erd_mu_c3,
-            erd_mu_c4,
-            erd_lat_mu,
-            mu_ratio,
-            motor_rel,
-            p2p_max_base,
-        ], dtype=np.float64)
+        return np.array(
+            [
+                abs(dec),
+                float(np.max(proba)),
+                csp_feat[0],
+                csp_feat[1],
+                csp_feat[2],
+                csp_feat[3],
+                mahal,
+                p2p_max_task,
+                kurt_max_task,
+                erd_mu_c3,
+                erd_mu_c4,
+                erd_lat_mu,
+                mu_ratio,
+                motor_rel,
+                p2p_max_base,
+            ],
+            dtype=np.float64,
+        )
 
     def extract_many(self, X: np.ndarray) -> np.ndarray:
         return np.stack([self.extract(ep) for ep in X])
@@ -182,16 +193,18 @@ class RawQualityExtractor:
     ch_names: Sequence[str]
     sfreq: float = 250.0
     baseline_samples: int = 500
-    feature_names: list[str] = field(default_factory=lambda: [
-        "peak_to_peak_max",
-        "kurtosis_max",
-        "baseline_p2p_max",
-        "erd_mu_c3",
-        "erd_mu_c4",
-        "erd_lat_mu",
-        "mu_ratio_motor",
-        "motor_relative_power",
-    ])
+    feature_names: list[str] = field(
+        default_factory=lambda: [
+            "peak_to_peak_max",
+            "kurtosis_max",
+            "baseline_p2p_max",
+            "erd_mu_c3",
+            "erd_mu_c4",
+            "erd_lat_mu",
+            "mu_ratio_motor",
+            "motor_relative_power",
+        ]
+    )
 
     def __post_init__(self):
         self.c3 = self.ch_names.index("C3")
@@ -201,8 +214,8 @@ class RawQualityExtractor:
 
     def extract(self, epoch: np.ndarray) -> np.ndarray:
         """epoch: (n_channels, n_times) — full baseline+task. Returns 8-d array."""
-        baseline = epoch[..., :self.baseline_samples]
-        task = epoch[..., self.baseline_samples:]
+        baseline = epoch[..., : self.baseline_samples]
+        task = epoch[..., self.baseline_samples :]
         eps = 1e-12
 
         # ---- artifact signals ----
@@ -222,8 +235,7 @@ class RawQualityExtractor:
         erd_lat_mu = erd_mu_c3 - erd_mu_c4
 
         # ---- power-ratio shape (task window only) ----
-        mu_motor = (task_mu_c3 + task_mu_c4
-                    + _bandpower(task[self.cz], self.sfreq, 8, 13))
+        mu_motor = task_mu_c3 + task_mu_c4 + _bandpower(task[self.cz], self.sfreq, 8, 13)
         beta_motor = (
             _bandpower(task[self.c3], self.sfreq, 13, 30)
             + _bandpower(task[self.c4], self.sfreq, 13, 30)
@@ -235,16 +247,19 @@ class RawQualityExtractor:
         global_var = np.mean(np.var(task, axis=-1))
         motor_rel = float(motor_var / (global_var + eps))
 
-        return np.array([
-            p2p_max_task,
-            kurt_max_task,
-            p2p_max_base,
-            erd_mu_c3,
-            erd_mu_c4,
-            erd_lat_mu,
-            mu_ratio,
-            motor_rel,
-        ], dtype=np.float64)
+        return np.array(
+            [
+                p2p_max_task,
+                kurt_max_task,
+                p2p_max_base,
+                erd_mu_c3,
+                erd_mu_c4,
+                erd_lat_mu,
+                mu_ratio,
+                motor_rel,
+            ],
+            dtype=np.float64,
+        )
 
     def extract_many(self, X: np.ndarray) -> np.ndarray:
         return np.stack([self.extract(ep) for ep in X])

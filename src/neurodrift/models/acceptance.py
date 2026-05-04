@@ -72,9 +72,7 @@ def train_acceptance_model(
     y_pred_te = model.predict(F_te_s)
     accuracy_te = float(np.mean(y_pred_te == Y_te))
 
-    report = classification_report(
-        Y_te, y_pred_te, target_names=["reject", "accept"], output_dict=True
-    )
+    report = classification_report(Y_te, y_pred_te, target_names=["reject", "accept"], output_dict=True)
     cm = confusion_matrix(Y_te, y_pred_te).tolist()
 
     metrics = {

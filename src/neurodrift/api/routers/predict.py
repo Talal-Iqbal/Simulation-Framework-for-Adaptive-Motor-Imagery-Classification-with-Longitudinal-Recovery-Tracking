@@ -57,9 +57,7 @@ def predict_trial(
         raise HTTPException(status_code=400, detail="epoch must be 2D (n_channels, n_times)")
 
     cal = _require_models(bundle, subject_id)
-    accept_threshold = (
-        payload.accept_threshold if payload.accept_threshold is not None else cal.cal_threshold
-    )
+    accept_threshold = payload.accept_threshold if payload.accept_threshold is not None else cal.cal_threshold
 
     X = epoch[np.newaxis, ...]
     y = np.array([payload.y_true]) if payload.y_true is not None else None
@@ -124,9 +122,7 @@ async def predict_upload(
     if y is not None and len(y) > 0:
         accuracy_all = float(np.mean([r.correct for r in results]))
         if accepted > 0:
-            accuracy_acc = float(
-                np.mean([r.correct for r in results if r.accepted])
-            )
+            accuracy_acc = float(np.mean([r.correct for r in results if r.accepted]))
 
     breakdown: Counter = Counter()
     for r in results:

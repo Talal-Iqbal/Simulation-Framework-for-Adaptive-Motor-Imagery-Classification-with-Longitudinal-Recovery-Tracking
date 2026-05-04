@@ -64,6 +64,7 @@ def _bandpass(x: np.ndarray, sfreq: float, fmin: float, fmax: float, order: int 
 # Trajectory generators — return r value per session
 # ---------------------------------------------------------------------------
 
+
 def trajectory_linear(n_sessions: int) -> np.ndarray:
     """Steady linear improvement from r=0 to r=1 across n_sessions."""
     if n_sessions <= 1:
@@ -95,7 +96,7 @@ def trajectory_relapse(
         return np.array([1.0])
     t = np.linspace(0.0, 1.0, n_sessions)
     base = t
-    dip = np.exp(-((t - dip_center) ** 2) / (2 * dip_width ** 2)) * dip_depth
+    dip = np.exp(-((t - dip_center) ** 2) / (2 * dip_width**2)) * dip_depth
     return np.clip(base - dip, 0.0, 1.0)
 
 
@@ -104,6 +105,7 @@ def trajectory_relapse(
 # Each transform takes its physical parameter directly so callers can sample
 # the four mechanisms independently rather than tying them to a single r.
 # ---------------------------------------------------------------------------
+
 
 def scale_erd(
     epoch: np.ndarray,
@@ -163,8 +165,8 @@ def add_correlated_noise(
     temporal = rng.standard_normal((n_comp, n_t))
     temporal = _bandpass(temporal, sfreq, 4, 30)
     noise = spatial @ temporal
-    rms_signal = float(np.sqrt(np.mean(epoch ** 2) + 1e-24))
-    rms_noise = float(np.sqrt(np.mean(noise ** 2) + 1e-24))
+    rms_signal = float(np.sqrt(np.mean(epoch**2) + 1e-24))
+    rms_noise = float(np.sqrt(np.mean(noise**2) + 1e-24))
     noise = noise / (rms_noise + 1e-12) * (rms_signal * g * 0.25)
     return epoch + noise
 
@@ -194,14 +196,15 @@ def apply_timing_jitter(
 # of the cross-prior generalisation test in Layer 7.
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class DegradationParams:
     """Physical degradation parameters consumed by the four transforms."""
 
-    alpha: float       # ERD amplitude scale, in [0, 1]
-    beta: float        # lateralization mix fraction, in [0, 1]
-    gamma: float       # relative noise RMS budget, >= 0
-    delta_ms: float    # max timing jitter (ms), >= 0
+    alpha: float  # ERD amplitude scale, in [0, 1]
+    beta: float  # lateralization mix fraction, in [0, 1]
+    gamma: float  # relative noise RMS budget, >= 0
+    delta_ms: float  # max timing jitter (ms), >= 0
 
 
 Prior = Callable[[float], DegradationParams]
@@ -231,10 +234,10 @@ def prior_alt(r: float) -> DegradationParams:
     r = float(r)
     one_minus = 1.0 - r
     return DegradationParams(
-        alpha=0.4 + 0.6 * (r ** 1.5),
-        beta=0.5 * one_minus ** 2,
-        gamma=2.0 * one_minus ** 0.5,
-        delta_ms=80.0 * one_minus ** 0.7,
+        alpha=0.4 + 0.6 * (r**1.5),
+        beta=0.5 * one_minus**2,
+        gamma=2.0 * one_minus**0.5,
+        delta_ms=80.0 * one_minus**0.7,
     )
 
 
@@ -248,7 +251,7 @@ def r_to_params(r: float, prior: Prior | None = None) -> DegradationParams:
 def sample_params_uniform(
     rng: np.random.Generator,
     alpha_range: tuple[float, float] = (0.4, 1.0),
-    beta_range:  tuple[float, float] = (0.0, 0.5),
+    beta_range: tuple[float, float] = (0.0, 0.5),
     gamma_range: tuple[float, float] = (0.0, 2.5),
     delta_range: tuple[float, float] = (0.0, 60.0),
 ) -> DegradationParams:
@@ -268,6 +271,7 @@ def sample_params_uniform(
 # ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DegradationModel:
@@ -312,13 +316,13 @@ class DegradationModel:
         """Apply the four transforms with explicit physical parameters,
         acting only on the imagery window."""
         full = epoch.copy()
-        task = full[..., self.baseline_samples:].copy()
+        task = full[..., self.baseline_samples :].copy()
         task = scale_erd(task, params.alpha, self.sfreq, self.motor_ch)
         task = mix_lateralization(task, params.beta, self.c3_idx, self.c4_idx)
         task = add_correlated_noise(task, params.gamma, self.sfreq, self.rng)
         if jitter and params.delta_ms > 0:
             task = apply_timing_jitter(task, params.delta_ms, self.sfreq, self.rng)
-        full[..., self.baseline_samples:] = task
+        full[..., self.baseline_samples :] = task
         return full
 
     def degrade_session_params(

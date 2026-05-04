@@ -165,9 +165,7 @@ def calibrate_subject(
         y_pred_eval = lda.predict(Xc_eval)
         eval_acc = float(np.mean(y_pred_eval == y_eval))
         eval_metrics = {"eval_accuracy": eval_acc}
-        diagnostics["classification_report"] = classification_report(
-            y_eval, y_pred_eval, output_dict=True
-        )
+        diagnostics["classification_report"] = classification_report(y_eval, y_pred_eval, output_dict=True)
 
     metrics = {
         "in_sample_accuracy": in_sample_acc,

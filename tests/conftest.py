@@ -70,7 +70,14 @@ def calibrated_subject(synthetic_epochs, rqe, trained_acceptance):
     X_cal, y_cal = synthetic_epochs
     X_eval, y_eval = synthetic_epochs
     artifacts, _ = calibrate_subject(
-        X_cal, y_cal, X_eval, y_eval, rqe, trained_acceptance,
-        subject_id=2, accept_percentile=20.0, min_per_class=2,
+        X_cal,
+        y_cal,
+        X_eval,
+        y_eval,
+        rqe,
+        trained_acceptance,
+        subject_id=2,
+        accept_percentile=20.0,
+        min_per_class=2,
     )
     return artifacts

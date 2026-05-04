@@ -55,16 +55,12 @@ def session_feature_vector(
     def col(name: str) -> np.ndarray:
         return F[:, names.index(name)]
 
-    X_task = X_session[..., fe.baseline_samples:]
+    X_task = X_session[..., fe.baseline_samples :]
     covs = np.array([np.cov(epoch) for epoch in X_task])
     mean_cov = covs.mean(axis=0)
     intertrial_cov_var = float(np.mean(np.var(covs, axis=0)))
 
-    frob = (
-        0.0
-        if baseline_cov is None
-        else float(np.linalg.norm(mean_cov - baseline_cov, ord="fro"))
-    )
+    frob = 0.0 if baseline_cov is None else float(np.linalg.norm(mean_cov - baseline_cov, ord="fro"))
 
     y_pred = lda.predict(csp.transform(X_task))
     acc = float(np.mean(y_pred == y_session))
@@ -138,6 +134,4 @@ def train_session_r_regressor(
         "n_samples": int(len(y)),
         "n_features": int(X.shape[1]),
     }
-    return RegressionArtifacts(
-        pipeline=pipeline, feature_names=feat_names, metrics=metrics, pca=pca
-    )
+    return RegressionArtifacts(pipeline=pipeline, feature_names=feat_names, metrics=metrics, pca=pca)
