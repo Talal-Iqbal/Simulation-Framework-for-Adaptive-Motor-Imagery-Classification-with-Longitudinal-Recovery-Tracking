@@ -40,6 +40,7 @@ def rqe():
 
 @pytest.fixture
 def acceptance_dataset(synthetic_epochs, rqe):
+
     from corruption_engine import CorruptionEngine
 
     from neurodrift.config import BASELINE_SAMPLES, SFREQ
