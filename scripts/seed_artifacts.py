@@ -31,12 +31,14 @@ from neurodrift.registry.store import ModelRegistry, hash_array
 
 
 def main() -> int:
+
+    from corruption_engine import CorruptionEngine
+    from feature_extractor import FeatureExtractor
+
     rng_seed = 0
     X_global, _y_global = make_synthetic_epochs(n_trials=64, seed=rng_seed)
     rqe = build_raw_quality_extractor()
     F_global = rqe.extract_many(X_global)
-
-    from corruption_engine import CorruptionEngine
 
     eng = CorruptionEngine(sfreq=SFREQ, baseline_samples=BASELINE_SAMPLES, seed=rng_seed)
     X_bad, meta = eng.generate_dataset(X_global, n_per_epoch=2)
@@ -59,8 +61,6 @@ def main() -> int:
         accept_percentile=20.0,
         min_per_class=4,
     )
-
-    from feature_extractor import FeatureExtractor
 
     fe = FeatureExtractor(csp=cal_artifacts.csp, lda=cal_artifacts.lda, ch_names=list(CH_NAMES))
     fe.fit(X_cal, y_cal)
