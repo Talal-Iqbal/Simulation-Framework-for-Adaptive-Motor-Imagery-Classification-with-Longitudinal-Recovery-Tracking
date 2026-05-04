@@ -20,8 +20,8 @@ corrupted trial plus metadata describing what was done.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from scipy.signal import butter, filtfilt
@@ -311,7 +311,7 @@ class CorruptionEngine:
     # Index where the rest baseline ends and the imagery window begins.
     # Default 500 = 2 s @ 250 Hz, matching the notebook's BASELINE_SAMPLES.
     baseline_samples: int = 500
-    family_weights: Dict[str, float] = field(default_factory=lambda: {
+    family_weights: dict[str, float] = field(default_factory=lambda: {
         "artifact":       0.20,
         "disengagement":  0.45,
         "implausibility": 0.10,
@@ -320,12 +320,12 @@ class CorruptionEngine:
     })
     # Skewed toward mild: the decision boundary lives in the near-threshold
     # zone, so oversample it.
-    severity_mix: Tuple[float, float, float] = (0.50, 0.35, 0.15)  # mild / moderate / severe
+    severity_mix: tuple[float, float, float] = (0.50, 0.35, 0.15)  # mild / moderate / severe
     seed: int = 0
 
     def __post_init__(self):
         self.rng = np.random.default_rng(self.seed)
-        self.primitives: List[CorruptionSpec] = [
+        self.primitives: list[CorruptionSpec] = [
             # --- artifacts (can happen anywhere in a recording) ---
             CorruptionSpec("emg_burst",              inject_emg_burst,        "artifact",      "full"),
             CorruptionSpec("eog_residual",           inject_eog_residual,     "artifact",      "full"),
@@ -347,7 +347,7 @@ class CorruptionEngine:
             CorruptionSpec("partial_lateralization", partial_lateralization,  "borderline",    "task"),
             CorruptionSpec("low_snr_borderline",     low_snr_borderline,      "borderline",    "full"),
         ]
-        self._by_family: Dict[str, List[CorruptionSpec]] = {}
+        self._by_family: dict[str, list[CorruptionSpec]] = {}
         for p in self.primitives:
             self._by_family.setdefault(p.family, []).append(p)
 
@@ -383,7 +383,7 @@ class CorruptionEngine:
 
     def generate_dataset(self, clean_epochs: np.ndarray, n_per_epoch: int = 5):
         X_bad = np.empty((len(clean_epochs) * n_per_epoch, *clean_epochs.shape[1:]), dtype=clean_epochs.dtype)
-        meta: List[dict] = []
+        meta: list[dict] = []
         k = 0
         for i, epoch in enumerate(clean_epochs):
             for _ in range(n_per_epoch):

@@ -31,8 +31,8 @@ Removed in this revision (low importance in the previous model):
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import List, Sequence
 
 import numpy as np
 from scipy.stats import kurtosis as _kurtosis
@@ -62,7 +62,7 @@ class FeatureExtractor:
     ch_names: Sequence[str]
     sfreq: float = 250.0
     baseline_samples: int = 500
-    feature_names: List[str] = field(default_factory=lambda: [
+    feature_names: list[str] = field(default_factory=lambda: [
         "lda_margin",
         "lda_proba_max",
         "csp_logvar_0", "csp_logvar_1", "csp_logvar_2", "csp_logvar_3",
@@ -85,7 +85,7 @@ class FeatureExtractor:
         self._centroids = None
         self._inv_cov = None
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> "FeatureExtractor":
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> FeatureExtractor:
         """X_train is the FULL (baseline+task) epoch tensor."""
         X_task = X_train[..., self.baseline_samples:]
         X_csp = self.csp.transform(X_task)
@@ -182,7 +182,7 @@ class RawQualityExtractor:
     ch_names: Sequence[str]
     sfreq: float = 250.0
     baseline_samples: int = 500
-    feature_names: List[str] = field(default_factory=lambda: [
+    feature_names: list[str] = field(default_factory=lambda: [
         "peak_to_peak_max",
         "kurtosis_max",
         "baseline_p2p_max",

@@ -44,8 +44,8 @@ Defaults match BNCI2014_001 (22-channel montage, 250 Hz, 2 s baseline +
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.signal import butter, filtfilt
@@ -238,7 +238,7 @@ def prior_alt(r: float) -> DegradationParams:
     )
 
 
-def r_to_params(r: float, prior: Optional[Prior] = None) -> DegradationParams:
+def r_to_params(r: float, prior: Prior | None = None) -> DegradationParams:
     """Map a scalar quality value to physical parameters via the chosen
     prior. Defaults to ``prior_default`` to preserve original behaviour."""
     p = prior or prior_default
@@ -247,10 +247,10 @@ def r_to_params(r: float, prior: Optional[Prior] = None) -> DegradationParams:
 
 def sample_params_uniform(
     rng: np.random.Generator,
-    alpha_range: Tuple[float, float] = (0.4, 1.0),
-    beta_range:  Tuple[float, float] = (0.0, 0.5),
-    gamma_range: Tuple[float, float] = (0.0, 2.5),
-    delta_range: Tuple[float, float] = (0.0, 60.0),
+    alpha_range: tuple[float, float] = (0.4, 1.0),
+    beta_range:  tuple[float, float] = (0.0, 0.5),
+    gamma_range: tuple[float, float] = (0.0, 2.5),
+    delta_range: tuple[float, float] = (0.0, 60.0),
 ) -> DegradationParams:
     """Sample (alpha, beta, gamma, delta_ms) independently from uniform
     ranges that cover the same physical envelope as ``prior_default`` over
@@ -289,11 +289,11 @@ class DegradationModel:
     cz_idx: int = 9
     c4_idx: int = 11
     seed: int = 0
-    prior: Optional[Prior] = field(default=None)
+    prior: Prior | None = field(default=None)
 
     def __post_init__(self):
         self.rng = np.random.default_rng(self.seed)
-        self.motor_ch: Tuple[int, int, int] = (self.c3_idx, self.cz_idx, self.c4_idx)
+        self.motor_ch: tuple[int, int, int] = (self.c3_idx, self.cz_idx, self.c4_idx)
         if self.prior is None:
             self.prior = prior_default
 
@@ -344,7 +344,7 @@ class DegradationModel:
         epoch: np.ndarray,
         r: float,
         jitter: bool = True,
-        prior: Optional[Prior] = None,
+        prior: Prior | None = None,
     ) -> np.ndarray:
         """Apply all four r-parameterized transforms to one trial."""
         params = r_to_params(r, prior=prior or self.prior)
@@ -355,7 +355,7 @@ class DegradationModel:
         X: np.ndarray,
         r: float,
         jitter: bool = True,
-        prior: Optional[Prior] = None,
+        prior: Prior | None = None,
     ) -> np.ndarray:
         """Apply the same r to every trial in a session."""
         params = r_to_params(r, prior=prior or self.prior)
@@ -376,9 +376,9 @@ class DegradationModel:
         n_sessions: int,
         shape: str = "linear",
         jitter: bool = True,
-        prior: Optional[Prior] = None,
+        prior: Prior | None = None,
         **kwargs,
-    ) -> Tuple[np.ndarray, List[Tuple[float, np.ndarray]]]:
+    ) -> tuple[np.ndarray, list[tuple[float, np.ndarray]]]:
         """Build a synthetic longitudinal series of ``n_sessions`` sessions
         from a single clean source session ``X_clean``.
 
@@ -397,7 +397,7 @@ class DegradationModel:
             Per-session degraded epoch tensors, in trajectory order.
         """
         rs = self.build_trajectory(n_sessions, shape=shape, **kwargs)
-        sessions: List[Tuple[float, np.ndarray]] = []
+        sessions: list[tuple[float, np.ndarray]] = []
         for r in rs:
             X_deg = self.degrade_session(X_clean, float(r), jitter=jitter, prior=prior)
             sessions.append((float(r), X_deg))
