@@ -1,4 +1,6 @@
 import type {
+  EvalSessionStartResponse,
+  EvalTrialResponse,
   HealthResponse,
   SessionAnalyzeResponse,
   SessionFeatureVector,
@@ -59,6 +61,17 @@ export async function predictTrial(subjectId: number): Promise<TrialPredictRespo
       y_true: Math.random() > 0.5 ? "left_hand" : "right_hand"
     })
   });
+}
+
+export async function startEvalSession(subjectId: number): Promise<EvalSessionStartResponse> {
+  return request<EvalSessionStartResponse>(
+    `/eval/session/start?subject_id=${subjectId}`,
+    { method: "POST" }
+  );
+}
+
+export async function getNextEvalTrial(sessionId: string): Promise<EvalTrialResponse> {
+  return request<EvalTrialResponse>(`/eval/session/${sessionId}/next`);
 }
 
 export async function analyzeSession(

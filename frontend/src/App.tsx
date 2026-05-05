@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { API_BASE, ApiError, analyzeSession, getHealth, predictTrial } from "./lib/apiClient";
+import { API_BASE, ApiError, analyzeSession, getHealth, getNextEvalTrial, startEvalSession } from "./lib/apiClient";
 import { buildLayer6Series, mockAnalyzeSession, mockSessionFeatures, mockTrial } from "./lib/mockData";
 import { useSessionStore } from "./state/sessionStore";
 import type { NavKey, SessionFeatureVector } from "./types/api";
@@ -51,7 +51,7 @@ function statusTone(status: "normal" | "watch" | "assist") {
 }
 
 export default function App() {
-  const { state, current, switchSubject, setRunState, appendTrial, resetSession, setSnapshot } =
+  const { state, current, switchSubject, setRunState, appendTrial, resetSession, setSnapshot, setEvalSessionId } =
     useSessionStore();
 
   const [activeNav, setActiveNav] = useState<NavKey>("overview");
@@ -127,12 +127,23 @@ export default function App() {
 
   useEffect(() => {
     if (current.runState !== "running") return;
+    if (!current.evalSessionId) return;
+
+    const evalSessionId = current.evalSessionId;
+
     const timer = window.setInterval(async () => {
       const lastTrial = current.trials[current.trials.length - 1];
       try {
-        const trial = await predictTrial(state.currentSubjectId);
+        const trial = await getNextEvalTrial(evalSessionId);
         appendTrial(trial);
+        if (trial.exhausted) {
+          setRunState("ended");
+        }
       } catch (error) {
+        if (error instanceof ApiError && error.status === 410) {
+          setRunState("ended");
+          return;
+        }
         const fallback = mockTrial(
           (lastTrial?.trial_idx ?? 0) + 1,
           lastTrial?.timestamp_s ?? 0
@@ -145,7 +156,7 @@ export default function App() {
     }, 1200);
 
     return () => window.clearInterval(timer);
-  }, [appendTrial, current.runState, current.trials, state.currentSubjectId]);
+  }, [appendTrial, current.evalSessionId, current.runState, current.trials, setRunState]);
 
   useEffect(() => {
     if (!current.trials.length) return;
@@ -222,9 +233,16 @@ export default function App() {
     }
   }
 
-  function onStart() {
-    setRunState("running");
+  async function onStart() {
     setLastError(null);
+    try {
+      const session = await startEvalSession(state.currentSubjectId);
+      setEvalSessionId(session.session_id);
+      setRunState("running");
+    } catch (error) {
+      const msg = error instanceof ApiError ? error.message : "Failed to start eval session";
+      setLastError(`${msg} — check that the subject is calibrated and the API is online`);
+    }
   }
 
   function onPause() {
@@ -348,13 +366,13 @@ export default function App() {
               <h3>Confidence / Margin Trend</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={confidenceSeries}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="idx" />
-                  <YAxis domain={[-1, 1]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2d47" />
+                  <XAxis dataKey="idx" tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
+                  <YAxis domain={[-1, 1]} tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="confidence" stroke="#2f80ed" dot={false} />
-                  <Line type="monotone" dataKey="margin" stroke="#9b51e0" dot={false} />
+                  <Line type="monotone" dataKey="confidence" stroke="#00d4b8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="margin" stroke="#a78bfa" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </article>
@@ -362,11 +380,11 @@ export default function App() {
               <h3>Rejection Breakdown</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={rejectionSeries}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="reason" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2d47" />
+                  <XAxis dataKey="reason" tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
+                  <YAxis tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#ff7d52" />
+                  <Bar dataKey="count" fill="#f87171" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </article>
@@ -468,14 +486,14 @@ export default function App() {
               <h3>Layer 6 Output</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={layer6Series}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="session" />
-                  <YAxis domain={[0, 1]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e2d47" />
+                  <XAxis dataKey="session" tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
+                  <YAxis domain={[0, 1]} tick={{ fill: "#7a8aaa", fontSize: 11 }} axisLine={{ stroke: "#1e2d47" }} tickLine={false} />
                   <Tooltip />
                   <Legend />
-                  <Line dataKey="r" stroke="#2f80ed" dot={false} />
-                  <Line dataKey="ldaAcc" stroke="#27ae60" dot={false} />
-                  <Line dataKey="erdDrift" stroke="#f2994a" dot={false} />
+                  <Line dataKey="r" stroke="#00d4b8" strokeWidth={2} dot={false} />
+                  <Line dataKey="ldaAcc" stroke="#34d399" strokeWidth={2} dot={false} />
+                  <Line dataKey="erdDrift" stroke="#fbbf24" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </article>

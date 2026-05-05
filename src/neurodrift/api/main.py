@@ -6,13 +6,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse
 
 from ..config import get_settings
 from ..observability.logging import configure_logging, get_logger
 from ..observability.metrics import get_metrics
 from .deps import get_model_bundle
-from .routers import analyze, calibrate, health, predict
+from .routers import analyze, calibrate, eval, health, predict
 
 
 @asynccontextmanager
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(predict.router)
     app.include_router(calibrate.router)
     app.include_router(analyze.router)
+    app.include_router(eval.router)
 
     @app.get("/metrics", response_class=PlainTextResponse, tags=["metrics"])
     def metrics() -> str:

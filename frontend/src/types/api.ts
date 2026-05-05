@@ -63,6 +63,17 @@ export interface SessionSnapshot {
   assistanceState: "normal" | "watch" | "assist";
 }
 
+export interface EvalSessionStartResponse {
+  session_id: string;
+  subject_id: number;
+  n_trials: number;
+}
+
+export interface EvalTrialResponse extends TrialPredictResponse {
+  cursor: number;
+  exhausted: boolean;
+}
+
 export type NavKey =
   | "overview"
   | "session"

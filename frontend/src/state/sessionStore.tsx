@@ -6,6 +6,7 @@ const STORAGE_PREFIX = "neurodrift.subject.";
 interface SubjectRuntimeState {
   runState: RunState;
   sessionId: string;
+  evalSessionId: string | null;
   trials: TrialPredictResponse[];
   sessionSnapshot: SessionSnapshot | null;
   lastUpdatedAt: number;
@@ -21,7 +22,8 @@ type Action =
   | { type: "setRunState"; runState: RunState }
   | { type: "appendTrial"; trial: TrialPredictResponse }
   | { type: "resetSession" }
-  | { type: "setSnapshot"; snapshot: SessionSnapshot };
+  | { type: "setSnapshot"; snapshot: SessionSnapshot }
+  | { type: "setEvalSessionId"; evalSessionId: string | null };
 
 function nowSessionId() {
   return `sess-${Date.now()}`;
@@ -39,6 +41,7 @@ function buildSubjectState(subjectId: number): SubjectRuntimeState {
   return {
     runState: "idle",
     sessionId: nowSessionId(),
+    evalSessionId: null,
     trials: [],
     sessionSnapshot: null,
     lastUpdatedAt: Date.now()
@@ -123,8 +126,21 @@ function reducer(state: AppState, action: Action): AppState {
           [state.currentSubjectId]: {
             runState: "idle",
             sessionId: nowSessionId(),
+            evalSessionId: null,
             trials: [],
             sessionSnapshot: null,
+            lastUpdatedAt: Date.now()
+          }
+        }
+      };
+    case "setEvalSessionId":
+      return {
+        ...state,
+        subjects: {
+          ...state.subjects,
+          [state.currentSubjectId]: {
+            ...subjectState,
+            evalSessionId: action.evalSessionId,
             lastUpdatedAt: Date.now()
           }
         }
@@ -142,6 +158,7 @@ interface SessionStoreValue {
   appendTrial: (trial: TrialPredictResponse) => void;
   resetSession: () => void;
   setSnapshot: (snapshot: SessionSnapshot) => void;
+  setEvalSessionId: (evalSessionId: string | null) => void;
 }
 
 const SessionStoreContext = createContext<SessionStoreValue | null>(null);
@@ -187,6 +204,10 @@ export function SessionStoreProvider({ children }: { children: React.ReactNode }
     dispatch({ type: "setSnapshot", snapshot });
   }, []);
 
+  const setEvalSessionId = useCallback((evalSessionId: string | null) => {
+    dispatch({ type: "setEvalSessionId", evalSessionId });
+  }, []);
+
   const value: SessionStoreValue = useMemo(() => ({
     state,
     current,
@@ -194,16 +215,17 @@ export function SessionStoreProvider({ children }: { children: React.ReactNode }
     setRunState,
     appendTrial,
     resetSession,
-    setSnapshot
-  }), [appendTrial, current, resetSession, setRunState, setSnapshot, state, switchSubject]);
+    setSnapshot,
+    setEvalSessionId
+  }), [appendTrial, current, resetSession, setRunState, setSnapshot, setEvalSessionId, state, switchSubject]);
 
   return <SessionStoreContext.Provider value={value}>{children}</SessionStoreContext.Provider>;
 }
 
 export function useSessionStore() {
-  const context = useContext(SessionStoreContext);
-  if (!context) {
+  const ctx = useContext(SessionStoreContext);
+  if (!ctx) {
     throw new Error("useSessionStore must be used within SessionStoreProvider");
   }
-  return context;
+  return ctx;
 }

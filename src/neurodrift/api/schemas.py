@@ -68,3 +68,14 @@ class SessionAnalyzeResponse(BaseModel):
     cluster: int
     predicted_r: float
     silhouette: float | None = None
+
+
+class EvalSessionStartResponse(BaseModel):
+    session_id: str
+    subject_id: int
+    n_trials: int
+
+
+class EvalTrialResponse(TrialPredictResponse):
+    cursor: int = Field(..., description="Zero-based index of the trial just served")
+    exhausted: bool = Field(..., description="True when this was the last trial in the eval set")
