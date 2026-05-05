@@ -9,8 +9,7 @@ genuine held-out EEG signals.
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
-from typing import Dict
+from dataclasses import dataclass
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
@@ -27,21 +26,23 @@ router = APIRouter(prefix="/eval", tags=["eval"])
 # In-process session store (single-process dev; replace with Redis for prod)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _EvalSession:
     subject_id: int
-    X_eval: np.ndarray       # (144, n_ch, n_t)
-    y_eval: np.ndarray       # (144,)
+    X_eval: np.ndarray  # (144, n_ch, n_t)
+    y_eval: np.ndarray  # (144,)
     cursor: int = 0
-    trial_counter: int = 0   # monotonic index across the session
+    trial_counter: int = 0  # monotonic index across the session
 
 
-_sessions: Dict[str, _EvalSession] = {}
+_sessions: dict[str, _EvalSession] = {}
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _require_models(bundle: ModelBundle, subject_id: int):
     if bundle.acceptance is None:
@@ -50,10 +51,7 @@ def _require_models(bundle: ModelBundle, subject_id: int):
     if cal is None:
         raise HTTPException(
             status_code=404,
-            detail=(
-                f"No calibration_subject_{subject_id} in registry. "
-                "Run /calibrate/subject first."
-            ),
+            detail=(f"No calibration_subject_{subject_id} in registry. Run /calibrate/subject first."),
         )
     return cal
 
@@ -61,6 +59,7 @@ def _require_models(bundle: ModelBundle, subject_id: int):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post("/session/start", response_model=EvalSessionStartResponse)
 def start_eval_session(
@@ -113,7 +112,7 @@ def next_eval_trial(
     cal = _require_models(bundle, session.subject_id)
 
     idx = session.cursor
-    X_single = session.X_eval[idx : idx + 1]          # (1, n_ch, n_t)
+    X_single = session.X_eval[idx : idx + 1]  # (1, n_ch, n_t)
     y_single = session.y_eval[idx : idx + 1]
 
     results = pseudo_online_engine(
